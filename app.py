@@ -1,3 +1,4 @@
+import os
 from flask import Flask, render_template, redirect, url_for, request, flash
 
 app = Flask(__name__)
@@ -10,9 +11,26 @@ PRODUCTS = [
     {"id": 3, "name": "Gaming Mouse", "price": 49.99, "description": "High precision and customizable buttons."}
 ]
 
+# Function to read all code files for display
+def load_repo_code():
+    repo_code = {}
+    base_dir = os.path.dirname(__file__)
+    for root, _, files in os.walk(base_dir):
+        for file in files:
+            if file.endswith((".py", ".txt", ".yaml", ".html", ".md")):
+                filepath = os.path.join(root, file)
+                relpath = os.path.relpath(filepath, base_dir)
+                try:
+                    with open(filepath, "r", encoding="utf-8") as f:
+                        repo_code[relpath] = f.read()
+                except Exception as e:
+                    repo_code[relpath] = f"Error reading file: {e}"
+    return repo_code
+
 @app.route("/")
 def home():
-    return render_template("home.html", products=PRODUCTS)
+    repo_code = load_repo_code()
+    return render_template("home.html", products=PRODUCTS, repo_code=repo_code)
 
 @app.route("/product/<int:product_id>")
 def product_detail(product_id):
@@ -31,3 +49,6 @@ def checkout():
     else:
         flash("Product not found!", "error")
     return redirect(url_for("home"))
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
